@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>互動式英文評量 - 第5課 Old Patterns, New Fashion</title>
+<style>
+    :root {
+        --primary: #2563EB;
+        --primary-hover: #1D4ED8;
+        --secondary: #DBEAFE;
+        --text-dark: #1F2937;
+        --text-light: #6B7280;
+        --bg-color: #F3F4F6;
+        --card-bg: #FFFFFF;
+        --success: #059669;
+        --error: #DC2626;
+        --border: #E5E7EB;
+        --highlight: #FBBF24;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-dark); line-height: 1.6; padding-bottom: 3rem; }
+    
+    header { background-color: var(--primary); color: white; padding: 1.5rem; text-align: center; }
+    h1 { font-size: 1.6rem; font-weight: bold; letter-spacing: 1px; }
+
+    /* 凍結在最上方的導覽列 */
+    .nav-tabs { 
+        display: flex; 
+        overflow-x: auto; 
+        background: var(--card-bg); 
+        border-bottom: 2px solid var(--border); 
+        position: sticky; 
+        top: 0; 
+        z-index: 1000; 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+    }
+    .nav-tab { flex: 1; min-width: 120px; text-align: center; padding: 1rem; cursor: pointer; font-weight: 600; color: var(--text-light); border-bottom: 3px solid transparent; transition: all 0.3s; white-space: nowrap; }
+    .nav-tab:hover { color: var(--primary); background: var(--secondary); }
+    .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: #EFF6FF; }
+
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    .section-container { display: none; }
+    .section-container.active { display: block; animation: fadeIn 0.4s ease; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* 雙閱讀模式文章區塊 */
+    .context-block { background: var(--card-bg); padding: 1.8rem; border-radius: 12px; margin-bottom: 1.5rem; border-left: 6px solid var(--primary); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .context-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 2px solid var(--secondary); padding-bottom: 0.8rem; }
+    .context-title { font-size: 1.3rem; font-weight: bold; color: var(--primary); }
+    .context-text { font-size: 1.15rem; line-height: 1.8; color: #374151; }
+    .context-trans { display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border); color: #4B5563; font-size: 1.05rem; }
+    .controls-group { display: flex; gap: 10px; flex-wrap: wrap; }
+    
+    /* 題目卡片 */
+    .question-card { background: var(--card-bg); padding: 1.8rem; border-radius: 12px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border); }
+    .question-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1.2rem; }
+    .question-text { font-size: 1.15rem; font-weight: 500; flex: 1; color: #111827; }
+    
+    /* 按鈕樣式 */
+    .tts-btn { background: var(--secondary); border: 1px solid var(--primary); cursor: pointer; font-size: 1.1rem; color: var(--primary); padding: 0.4rem 0.8rem; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+    .tts-btn:hover { background: var(--primary); color: white; transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .action-btn { background: #6B7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.95rem; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+    .action-btn:hover { background: #4B5563; }
+    .check-btn { background: var(--primary); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-size: 1.05rem; cursor: pointer; margin-top: 1rem; font-weight: bold; transition: background 0.2s; width: 100%; }
+    .check-btn:hover { background: var(--primary-hover); }
+
+    /* 選項與輸入框 */
+    .options-grid { display: grid; gap: 0.8rem; width: 100%; }
+    .option-label { display: flex; align-items: center; padding: 1rem 1.2rem; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; background: #F9FAFB; font-size: 1.1rem; color: #374151; }
+    .option-label:hover { background: var(--secondary); border-color: var(--primary); }
+    .option-label input { margin-right: 12px; accent-color: var(--primary); transform: scale(1.3); pointer-events: none; }
+    .option-label.correct { background: #D1FAE5 !important; border-color: var(--success) !important; color: #064E3B !important; font-weight: bold; }
+    .option-label.wrong { background: #FEE2E2 !important; border-color: var(--error) !important; color: #7F1D1D !important; }
+
+    .input-field { width: 100%; padding: 0.8rem 1rem; border: 2px solid var(--border); border-radius: 8px; font-size: 1.1rem; margin-top: 0.8rem; background: #F9FAFB; }
+    .input-field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--secondary); background: #FFFFFF; }
+    
+    /* 回饋與解析區塊 */
+    .feedback { margin-top: 1.2rem; font-weight: bold; display: none; font-size: 1.15rem; padding: 0.8rem; border-radius: 8px; }
+    .feedback.success { color: var(--success); background: #D1FAE5; }
+    .feedback.error { color: var(--error); background: #FEE2E2; }
+
+    .exp-box { background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 5px solid var(--highlight); padding: 1.5rem; border-radius: 8px; margin-top: 1.2rem; display: none; animation: fadeIn 0.4s ease; }
+    .exp-box h4 { color: #1E40AF; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 6px; font-size: 1.15rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.5rem; }
+    .exp-item { margin-bottom: 0.8rem; line-height: 1.6; font-size: 1.05rem; }
+    .exp-item strong { color: #334155; display: inline-block; width: 90px; }
+    .exp-item:last-child { margin-bottom: 0; }
+    
+    .highlight-blank { display: inline-block; min-width: 40px; text-align: center; border-bottom: 2px solid var(--text-dark); font-weight: bold; padding: 0 5px; color: var(--primary); }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>📖 互動式英文評量：第5課 Old Patterns, New Fashion</h1>
+</header>
+
+<div class="nav-tabs" id="tabs">
+    <div class="nav-tab active" data-target="vocab">一、文意字彙</div>
+    <div class="nav-tab" data-target="grammar">二、語法測驗</div>
+    <div class="nav-tab" data-target="cloze">三、綜合測驗</div>
+    <div class="nav-tab" data-target="dialogue">四、對話測驗</div>
+    <div class="nav-tab" data-target="reading">五、閱讀測驗</div>
+    <div class="nav-tab" data-target="fillin">六七、填充重組</div>
+</div>
+
+<div class="container" id="app"></div>
+
+<script>
+// ================= 測驗資料 =================
+const contexts = {
+    'cloze_1': {
+        title: '綜合測驗：Jason Wu (吳季剛)',
+        en: `Jason Wu is a fashion designer from Taiwan. One of his creations <span class="highlight-blank">19. ______</span> at the U.S. presidential inauguration when former First Lady Michelle Obama wore one of his dresses. People said that his design was <span class="highlight-blank">20. ______</span> beautiful that it impressed everyone there. Since then, Jason Wu has been under the <span class="highlight-blank">21. ______</span> for his mix of classic and modern styles. He once said <span class="highlight-blank">22. ______</span> fashion should make people feel confident, not just look good. Now he is one of the designers <span class="highlight-blank">23. ______</span> the world will never forget. His success also inspires many young designers to believe in their own abilities.`,
+        zh: `吳季剛是一位來自台灣的時尚設計師。當前第一夫人蜜雪兒·歐巴馬在美國總統就職典禮上穿著他設計的一件洋裝時，他的其中一件作品搶盡了風頭。人們說他的設計是如此美麗，以至於讓在場的每個人都印象深刻。從那時起，吳季剛因為融合古典與現代風格而備受矚目。他曾說過，時尚應該讓人感到自信，而不僅僅是好看。現在，他是世界上永遠不會忘記的設計師之一。他的成功也激勵了許多年輕設計師相信自己的能力。`,
+        fillWords: {'19. ______': 'stole the show', '20. ______': 'so', '21. ______': 'spotlight', '22. ______': 'that', '23. ______': 'whom'}
+    },
+    'reading_A': {
+        title: '閱讀A：Ways to Deal with Old Clothes (處理舊衣方法)',
+        en: `Judy did a survey on how people deal with their old clothes. She made a bar graph based on the results of the survey.<br><br>
+        <strong>Ways to Deal with Old Clothes:</strong><br>
+        A. Throwing them away as garbage (9 people)<br>
+        B. Selling them to second-hand stores (4 people)<br>
+        C. Giving them to friends or relatives (28 people)<br>
+        D. Putting them in recycling boxes (23 people)<br>
+        E. Donating them to charity (11 people)<br>
+        F. Invalid questionnaires (5 people)`,
+        zh: `Judy 做了一項關於人們如何處理舊衣服的調查。她根據調查結果製作了長條圖。處理舊衣服的方法：A. 當作垃圾丟掉 (9人)；B. 賣給二手店 (4人)；C. 送給親戚朋友 (28人)；D. 放進資源回收箱 (23人)；E. 捐給慈善機構 (11人)；F. 無效問卷 (5人)。`,
+        fillWords: {}
+    },
+    'reading_B': {
+        title: '閱讀B：Taiwanese Floral Fabric (台灣花布)',
+        en: `In the 1960s and early 1970s, Taiwanese floral fabric was everywhere in Taiwan. Its bright colors and flower patterns could be seen on bed sheets, clothes, and bags in almost every home. For many people, it is a warm memory of the past. After the mid-1970s, however, things changed. Western-style fashions took over. What's more, because the fabrics were everywhere and cheap to buy, people started to see them as old-fashioned. For a while, floral patterns almost disappeared from markets and daily life.<br><br>In recent years, this "old" pattern has made a strong comeback. It now appears on many new products like wallets, shoes, umbrellas, and notebooks. Young designers mix it with modern styles to give it new life and new meaning. The pattern that once looked tacky has become a symbol of Taiwan's local culture.`,
+        zh: `在1960年代和1970年代初期，台灣花布在台灣無處不在。幾乎每個家庭的床單、衣服和包包上都能看到它鮮豔的色彩和花朵圖案。對許多人來說，這是過去溫暖的回憶。然而，1970年代中期之後，情況發生了變化。西式時尚接管了市場。此外，由於這些布料隨處可見且價格便宜，人們開始認為它們過時了。有一段時間，花布圖案幾乎從市場和日常生活中消失了。<br><br>近年來，這種「古老」的圖案強勢回歸。它現在出現在許多新產品上，如錢包、鞋子、雨傘和筆記本。年輕的設計師將它與現代風格結合，賦予它新的生命和新的意義。這個曾經看起來俗氣的圖案已經成為台灣在地文化的象徵。`,
+        fillWords: {}
+    }
+};
+
+const quizData = [
+    // === Section 1: Vocabulary ===
+    { section: 'vocab', type: 'input', q: '1. We visited an a______t church in France. It was built 900 years ago.', ans: ['ancient'], 
+        exp: { clue: '從 built 900 years ago (建於900年前) 可推知這是一座「古老的」教堂。', words: 'ancient (adj.) 古老的; church (n.) 教堂', grammar: '形容詞 ancient 修飾名詞 church；was built 為被動語態 (被建造)。', trans: '我們參觀了法國一座古老的教堂。它建於900年前。' } },
+    { section: 'vocab', type: 'input', q: '2. Ms. Lee doesn\'t follow fashion t______ds and always wears a black suit in the office.', ans: ['trends'], 
+        exp: { clue: 'doesn\'t follow fashion (不盲從時尚) 後面搭配趨勢，即為 fashion trends (時尚潮流)。', words: 'trend (n.) 趨勢、潮流; suit (n.) 套裝', grammar: 'follow trends 為常見的動詞+名詞搭配。因為是複數概念，字尾需加上 s。', trans: '李小姐不盲從時尚潮流，在辦公室總是穿著黑色套裝。' } },
+    { section: 'vocab', type: 'input', q: '3. Teamwork is a necessary e______t of this sport.', ans: ['element'], 
+        exp: { clue: '由語意「團隊合作是這項運動必要的___」可知，應填入「元素/要素」。', words: 'teamwork (n.) 團隊合作; necessary (adj.) 必要的; element (n.) 要素', grammar: 'an element of... 表示「...的要素/部分」。', trans: '團隊合作是這項運動不可或缺的要素。' } },
+    { section: 'vocab', type: 'input', q: '4. When John cannot make a decision, he turns to his father for g______e.', ans: ['guidance'], 
+        exp: { clue: 'cannot make a decision (無法做決定) 時會向父親尋求「指引/指導」。', words: 'decision (n.) 決定; turn to (phr.) 尋求幫助; guidance (n.) 指導', grammar: 'turn to sb for sth (向某人尋求某事物的幫助)。', trans: '當約翰無法做決定時，他會向父親尋求指導。' } },
+    { section: 'vocab', type: 'mc', q: '5. Helen is an immigrant from Malaysia, not a ______ Taiwanese.', options: ['(A) crowded', '(B) national', '(C) native', '(D) diverse'], ans: 2, 
+        exp: { clue: 'immigrant (移民) 的反義概念是 native (本地的/土生土長的)。<br><b>為何不選其他：</b>(A)擁擠的 (B)國家的 (D)多元的，皆不符合語境對比。', words: 'immigrant (n.) 移民; native (adj.) 本地的', grammar: '形容詞 native 放在名詞 Taiwanese 前作修飾。', trans: '海倫是來自馬來西亞的移民，而不是土生土長的台灣人。' } },
+    { section: 'vocab', type: 'mc', q: '6. The students designed a special ______ for their class T-shirts.', options: ['(A) tribe', '(B) talent', '(C) member', '(D) pattern'], ans: 3, 
+        exp: { clue: '為班服設計特別的「圖案」。<br><b>為何不選其他：</b>(A)部落 (B)天賦 (C)成員。T恤上被「設計 (designed)」的應為圖案。', words: 'design (v.) 設計; pattern (n.) 圖案', grammar: 'design a pattern (設計圖案)。', trans: '學生們為他們的班級T恤設計了特別的圖案。' } },
+    { section: 'vocab', type: 'mc', q: '7. After college, Cathy will ______ to study for a Master\'s degree.', options: ['(A) continue', '(B) symbolize', '(C) guide', '(D) connect'], ans: 0, 
+        exp: { clue: '大學畢業後「繼續」攻讀碩士學位。<br><b>為何不選其他：</b>(B)象徵 (C)引導 (D)連結，放入句中皆不合邏輯。', words: 'continue (v.) 繼續; Master\'s degree (n.) 碩士學位', grammar: 'continue to V (繼續做某事)。', trans: '大學畢業後，凱西將繼續攻讀碩士學位。' } },
+    { section: 'vocab', type: 'mc', q: '8. David was born in Taiwan, but his ______ came from China hundreds of years ago.', options: ['(A) customers', '(B) ancestors', '(C) directors', '(D) stripes'], ans: 1, 
+        exp: { clue: '「數百年前從中國來的」，對應的應該是「祖先」(ancestors)。<br><b>為何不選其他：</b>(A)顧客 (C)導演 (D)條紋，皆不符合來源邏輯。', words: 'ancestor (n.) 祖先', grammar: 'came from 使用過去式，表示過去發生的事實。', trans: '大衛出生在台灣，但他的祖先幾百年前來自中國。' } },
+    { section: 'vocab', type: 'mc', q: '9. (選出同義字) In order to lose weight, I have been working out at the gym <u>recently</u>.', options: ['(A) highly', '(B) hardly', '(C) lastly', '(D) lately'], ans: 3, 
+        exp: { clue: 'recently 的意思是「最近」，其同義詞為 lately。<br><b>為何不選其他：</b>(A)高度地 (B)幾乎不 (C)最後。', words: 'recently / lately (adv.) 最近; work out (phr.) 運動', grammar: '現在完成進行式 常搭配 lately/recently 使用。', trans: '為了減肥，我最近一直在健身房運動。' } },
+    { section: 'vocab', type: 'mc', q: '10. (選出同義字) A wedding ring is a <u>symbol</u> of love and trust.', options: ['(A) sign', '(B) scene', '(C) secret', '(D) stage'], ans: 0, 
+        exp: { clue: 'symbol 的意思是「象徵/標誌」，同義詞為 sign。<br><b>為何不選其他：</b>(B)場景 (C)秘密 (D)舞台。', words: 'symbol / sign (n.) 象徵/標誌; trust (n.) 信任', grammar: 'A is a symbol of B (A 是 B 的象徵)。', trans: '結婚戒指是愛與信任的象徵。' } },
+
+    // === Section 2: Grammar ===
+    { section: 'grammar', type: 'mc', q: '11. ______ a member of the basketball team, I need to practice every day.', options: ['(A) To', '(B) As', '(C) In', '(D) Into'], ans: 1, 
+        exp: { clue: '句意表示「作為...身分/身為...」，介系詞必須使用 As。<br><b>為何不選其他：</b>To(前往/給)、In(在...之中) 皆無法表示「身分或職業」。', words: 'member (n.) 成員; practice (v.) 練習', grammar: 'As + 身分/職業 (身為...)。', trans: '身為籃球隊的一員，我每天都需要練習。' } },
+    { section: 'grammar', type: 'mc', q: '12. The weather is getting ______ as winter is coming.', options: ['(A) cold and cold', '(B) colder and colder', '(C) coldest and coldest', '(D) more and more cold'], ans: 1, 
+        exp: { clue: '表示天氣「越來越...」。<br><b>為何不選其他：</b>cold 是單音節字，字尾直接加 -er 即可，不能用 more 修飾。', words: 'weather (n.) 天氣', grammar: '動詞 get/become + 比較級 and 比較級 (變得越來越...)。', trans: '隨著冬天的到來，天氣變得越來越冷。' } },
+    { section: 'grammar', type: 'mc', q: '13. The teacher believes ______ students can learn a lot from group projects.', options: ['(A) which', '(B) what', '(C) who', '(D) that'], ans: 3, 
+        exp: { clue: 'believes 後面接完整的句子。<br><b>為何不選其他：</b>which/what/who 通常後方接「不完整」子句，此句完整不缺成分，故選 that 引導名詞子句。', words: 'believe (v.) 相信; group project (n.) 團體報告', grammar: 'that 引導「名詞子句」，作為動詞 believes 的受詞。', trans: '老師相信學生可以從團體報告中學到很多。' } },
+    { section: 'grammar', type: 'mc', q: '14. Eric said ______ he couldn\'t find his wallet anywhere.', options: ['(A) that', '(B) it', '(C) which', '(D) who'], ans: 0, 
+        exp: { clue: 'said 後面接完整的句子說明說話的內容。<br><b>為何不選其他：</b>it 是代名詞無法引導子句；which/who 需要接不完整子句。', words: 'wallet (n.) 錢包', grammar: '動詞 say 後面接 that 引導的名詞子句。', trans: '艾瑞克說他到處都找不到他的錢包。' } },
+    { section: 'grammar', type: 'mc', q: '15. The designer brought her new ideas ______ the fashion show.', options: ['(A) for', '(B) to', '(C) with', '(D) as'], ans: 1, 
+        exp: { clue: '把某物帶「到」某處，使用介系詞 to 表示方向與目的地。<br><b>為何不選其他：</b>for(為了)、with(伴隨)、as(作為) 皆不符合方向性。', words: 'designer (n.) 設計師; fashion show (n.) 時裝秀', grammar: 'bring + 物品 + to + 地方/人 (將某物帶到某地)。', trans: '這位設計師將她的新想法帶到了時裝秀上。' } },
+    { section: 'grammar', type: 'mc', q: '16. I felt ______ tired today that I almost fell asleep in class.', options: ['(A) too', '(B) such', '(C) much', '(D) so'], ans: 3, 
+        exp: { clue: '看到後面的 that，可知為「如此...以至於...」句型。<br><b>為何不選其他：</b>too 搭配 to V；such 後面必須接「名詞」；much 不與 that 連用。', words: 'tired (adj.) 疲累的; fall asleep (phr.) 睡著', grammar: 'so + 形容詞/副詞 + that + S + V (如此...以至於...)。', trans: '我今天覺得好累，以至於差點在課堂上睡著。' } },
+    { section: 'grammar', type: 'mc', q: '17. It was ______ exciting news that everyone started talking about it.', options: ['(A) so', '(B) too', '(C) such', '(D) very'], ans: 2, 
+        exp: { clue: 'news (新聞) 為名詞，修飾名詞需用 such。<br><b>為何不選其他：</b>so 用來修飾形容詞或副詞，不能跨越名詞(如news)連用。', words: 'exciting (adj.) 令人興奮的; news (n.) 新聞(不可數)', grammar: 'such + (adj.) + 名詞 + that + S + V。', trans: '這真是太令人興奮的消息了，以至於每個人都開始討論它。' } },
+    { section: 'grammar', type: 'mc', q: '18. The street musician played the guitar so ______ that many people stopped to listen.', options: ['(A) good', '(B) well', '(C) better', '(D) more'], ans: 1, 
+        exp: { clue: '修飾一般動詞 played (彈奏)，必須使用「副詞」。<br><b>為何不選其他：</b>good 是形容詞；better/more 是比較級，so 後面只能接「原級」。', words: 'street musician (n.) 街頭藝人', grammar: 'so + 原級副詞 + that + 子句。', trans: '這位街頭藝人吉他彈得太好了，以至於許多人停下來聆聽。' } },
+
+    // === Section 3: Cloze ===
+    { section: 'cloze', type: 'mc', q: '19. One of his creations ______ at the U.S. presidential inauguration...', options: ['(A) passed down', '(B) stole the show', '(C) was made up', '(D) had trouble'], ans: 1, 
+        exp: { clue: '後文提到「美麗到讓每個人印象深刻」，可知作品「搶盡風頭」。<br><b>為何不選其他：</b>(A)傳承下來 (C)由...組成 (D)遇到困難，皆不符合語意。', words: 'creation (n.) 創造物/作品; steal the show (phr.) 搶盡風頭', grammar: '過去發生的事，使用過去式 stole。', trans: '他的其中一件作品在美國總統就職典禮上搶盡了風頭。' }, context: 'cloze_1' },
+    { section: 'cloze', type: 'mc', q: '20. his design was ______ beautiful that it impressed everyone...', options: ['(A) as ... as', '(B) seen as', '(C) more than', '(D) so'], ans: 3, 
+        exp: { clue: 'beautiful 後面接了 that 子句表示結果。<br><b>為何不選其他：</b>只有 so 可以搭配 that。(A)像...一樣 (B)被視為 (C)多過於，皆無法與 that 連用。', words: 'impress (v.) 使印象深刻', grammar: 'so + 形容詞 + that + 結果子句。', trans: '他的設計是如此美麗，以至於讓在場的每個人都印象深刻。' }, context: 'cloze_1' },
+    { section: 'cloze', type: 'mc', q: '21. Jason Wu has been under the ______ for his mix of classic and modern styles.', options: ['(A) spotlight', '(B) symbol', '(C) ancestor', '(D) culture'], ans: 0, 
+        exp: { clue: 'under the spotlight 意指「成為焦點/備受矚目」。<br><b>為何不選其他：</b>(B)象徵 (C)祖先 (D)文化，皆無 under the... 的相關搭配。', words: 'spotlight (n.) 聚光燈; classic (adj.) 古典的', grammar: 'under the spotlight 為固定介系詞片語。', trans: '吳季剛因為融合古典與現代風格而備受矚目。' }, context: 'cloze_1' },
+    { section: 'cloze', type: 'mc', q: '22. He once said ______ fashion should make people feel confident...', options: ['(A) which', '(B) it', '(C) that', '(D) because'], ans: 2, 
+        exp: { clue: 'said 後面接完整的句子作受詞。<br><b>為何不選其他：</b>which 需接不完整子句；it 無法連接子句；because 表原因，語意不合。', words: 'confident (adj.) 自信的', grammar: 'say + that 引導的名詞子句。', trans: '他曾說過，時尚應該讓人感到自信。' }, context: 'cloze_1' },
+    { section: 'cloze', type: 'mc', q: '23. Now he is one of the designers ______ the world will never forget.', options: ['(A) is', '(B) whom', '(C) are', '(D) which'], ans: 1, 
+        exp: { clue: '先行詞 designers (人)，在後方的關係子句中作 forget 的受詞。<br><b>為何不選其他：</b>(A)(C)為動詞，破壞結構；(D)which 只能修飾「事物」。', words: 'forget (v.) 忘記', grammar: 'whom 引導形容詞子句修飾人，當作受格使用。', trans: '現在，他是世界上永遠不會忘記的設計師之一。' }, context: 'cloze_1' },
+
+    // === Section 4: Dialogue ===
+    { section: 'dialogue', type: 'mc', q: '24. Clerk: May I help you?<br>Lily: I heard you\'re having a sale now.<br>Clerk: Yes. ______<br>Lily: That\'s great. I\'m looking for a new phone case.', options: ['(A) May I take your order now?', '(B) Are you kidding?', '(C) We accept cash and credit cards only.', '(D) There\'s 20% off everything this week.'], ans: 3, 
+        exp: { clue: '顧客提到 sale (特賣)，店員應回覆折扣相關的資訊。<br><b>為何不選其他：</b>(A)餐廳點餐用語 (C)只收現金信用卡，與特賣無直接關聯。', words: 'sale (n.) 特賣; off (adv.) 折扣/減價', grammar: '20% off 表示打八折。', trans: '店員：是的。這週所有商品都有八折優惠。' } },
+    { section: 'dialogue', type: 'mc', q: '25. Jason: These running shoes look cool. ______<br>Clerk: Of course. What size are you?', options: ['(A) Where did you get them?', '(B) Can I try them on?', '(C) Do you have other colors?', '(D) They are a bit expensive for me.'], ans: 1, 
+        exp: { clue: '店員回覆問尺寸 (What size...)，表示顧客要求試穿。<br><b>為何不選其他：</b>(A)哪裡買的 (C)有其他顏色嗎，都無法合理引出詢問尺寸的回答。', words: 'try on (phr.) 試穿; size (n.) 尺寸', grammar: 'try them on (代名詞放中間)。', trans: '傑森：這些跑鞋看起來很酷。我可以試穿嗎？' } },
+    { section: 'dialogue', type: 'mc', q: '26. Ruth: Wow, that dress is so cool. I think you should buy it!<br>Emma: I don\'t know. ______<br>Ruth: Of course! You look good in it.', options: ['(A) Do you have something cheaper?', '(B) These shoes are too small for me.', '(C) I don\'t really like the style.', '(D) Do you really think it suits me?'], ans: 3, 
+        exp: { clue: 'Ruth 回答「當然！妳穿起來很好看」，推測 Emma 在懷疑這件衣服是否適合自己。<br><b>為何不選其他：</b>(A)問價錢 (C)不喜歡風格，無法接續「穿起來很好看」。', words: 'suit (v.) 適合; look good (phr.) 看起來不錯', grammar: 'look good in + 衣物 (穿...很好看)。', trans: '艾瑪：我不知道。妳真的覺得它適合我嗎？' } },
+    { section: 'dialogue', type: 'mc', q: '27. Mia: ______<br>Tina: Maybe this checked shirt with shorts. It\'s casual but still stylish.<br>Mia: Nice! I\'m thinking of wearing something simple...', options: ['(A) What are you wearing to the party tonight?', '(B) What are you looking for?', '(C) I\'d like a simple coat.', '(D) The fitting room is over there.'], ans: 0, 
+        exp: { clue: '討論穿搭 (襯衫配短褲)，可知 Mia 是在問對方要「穿什麼」。<br><b>為何不選其他：</b>(B)你在找什麼 (D)試衣間在那裡，無法引出服裝搭配的討論。', words: 'checked shirt (n.) 格子襯衫; casual (adj.) 休閒的', grammar: '現在進行式 在此表示確定的未來計畫。', trans: '米亞：妳今晚派對要穿什麼？' } },
+    { section: 'dialogue', type: 'mc', q: '28. Becky: Hey, your sweater looks really nice!<br>Paul: Thanks! My grandma made it for me last winter.<br>Becky: Wow, that\'s so cool.<br>Paul: ______', options: ['(A) I haven\'t seen it before.', '(B) Yeah, and it\'s meaningful to me.', '(C) I bought it from an online shop.', '(D) Anytime.'], ans: 1, 
+        exp: { clue: '毛衣是奶奶親手織的，因此對 Paul 來說「很有意義」(meaningful)。<br><b>為何不選其他：</b>(A)我沒看過它 (C)網購的，與上文「奶奶做的」語意矛盾。', words: 'meaningful (adj.) 有意義的', grammar: 'be meaningful to sb (對某人而言有意義)。', trans: '保羅：是啊，而且它對我來說很有意義。' } },
+
+    // === Section 5: Reading ===
+    { section: 'reading', type: 'mc', q: '29. How many questionnaires did Judy collect for this survey?', options: ['(A) 47', '(B) 24', '(C) 76', '(D) 72'], ans: 2, 
+        exp: { clue: '計算各選項人數總和：9(A) + 4(B) + 28(C) + 23(D) + 11(E) + 1(F) = 76 份。', words: 'questionnaire (n.) 問卷; collect (v.) 收集', grammar: 'How many + 複數名詞，詢問數量。', trans: '茱蒂為這項調查收集了多少份問卷？答：76份。' }, context: 'reading_A' },
+    { section: 'reading', type: 'mc', q: '30. According to the graph, what is the most common way people deal with their old clothes?', options: ['(A) Selling them to second-hand stores.', '(B) Throwing them away as garbage.', '(C) Giving them to friends or relatives.', '(D) Putting them in recycling boxes.'], ans: 2, 
+        exp: { clue: '從文章數據中可見，選項 C (送給親戚朋友) 的人數最多，高達 28 人。', words: 'common (adj.) 常見的; deal with (phr.) 處理', grammar: 'the most common (最高級：最常見的)。', trans: '根據圖表，人們處理舊衣服最常見的方法是什麼？答：送給親戚朋友。' }, context: 'reading_A' },
+    { section: 'reading', type: 'mc', q: '31. Which of the following statements is true, according to the graph?', options: ['(A) Eleven people made money from their old clothes.', '(B) Half of the people didn\'t do anything with their old clothes.', '(C) Donating old clothes to charity is the way the fewest people used.', '(D) The number of people giving to friends is more than those putting in recycling boxes.'], ans: 3, 
+        exp: { clue: '送給朋友(28人)大於放進回收箱(23人)。<br><b>為何不選其他：</b>(A)賣錢的只有4人 (C)最少人使用的是賣給二手店(4人)。', words: 'statement (n.) 敘述; true (adj.) 真實的', grammar: 'more than (多於...)，做數量比較。', trans: '根據圖表，送給朋友的人數多於放進回收箱的人數。' }, context: 'reading_A' },
+    { section: 'reading', type: 'mc', q: '32. What is the main idea of this article?', options: ['(A) Floral patterns have become popular around the world.', '(B) Fashion plays an important role in modern life.', '(C) Western-style fashions are different from Eastern-style.', '(D) The history and development of Taiwanese floral fabric.'], ans: 3, 
+        exp: { clue: '文章從 1960 年代台灣花布的流行，講述到近年強勢回歸。主軸為「歷史與發展」。<br><b>為何不選其他：</b>(A)並非全世界 (B)(C)太過廣泛。', words: 'main idea (n.) 主旨; history (n.) 歷史; development (n.) 發展', grammar: 'The history and development of... (...的歷史與發展)。', trans: '這篇文章的主旨是什麼？答：台灣花布的歷史與發展。' }, context: 'reading_B' },
+    { section: 'reading', type: 'mc', q: '33. What is the correct order of these events?<br>a. Floral patterns are used in new products.<br>b. Floral patterns disappeared from everyday life.<br>c. Floral patterns were everywhere in Taiwan.', options: ['(A) a -> b -> c', '(B) c -> a -> b', '(C) c -> b -> a', '(D) b -> a -> c'], ans: 2, 
+        exp: { clue: '時間軸：1960s無處不在(c) -> 1970s中期後消失(b) -> 近年來重新用於新產品(a)。', words: 'disappear (v.) 消失; everywhere (adv.) 到處', grammar: '順序題需仰賴文章中的時間副詞。', trans: '這些事件的正確順序是什麼？答：c -> b -> a。' }, context: 'reading_B' },
+    { section: 'reading', type: 'mc', q: '34. Which of these statements is true?', options: ['(A) Modern designers no longer use floral patterns in their work.', '(B) Floral patterns have become popular again in recent years.', '(C) Floral patterns are just used in art.', '(D) People in Taiwan never saw floral patterns as old-fashioned.'], ans: 1, 
+        exp: { clue: '文章最後提到 pattern has made a strong comeback，表示近年再次流行。<br><b>為何不選其他：</b>(A)錯，年輕設計師仍在使用。(C)錯，也用在生活用品。', words: 'popular (adj.) 受歡迎的; comeback (n.) 回歸', grammar: '現在完成式 have become 表示持續到現在的狀態。', trans: '下列哪個敘述是正確的？答：近年來，花布圖案再次流行起來。' }, context: 'reading_B' },
+
+    // === Section 6 & 7: Fill-in & Reordering ===
+    { section: 'fillin', type: 'input', q: '35. John 買下這間舊雜貨店後，他把它變成一家新的便利超商。<br>After John bought the old grocery store, he t______ it i______ a new convenience store.', ans: ['turned', 'into'], 
+        exp: { clue: '「將 A 變成 B」，使用片語 turn A into B。', words: 'grocery store (n.) 雜貨店; convenience store (n.) 便利商店', grammar: '前半句 bought 為過去式，故使用過去式 turned into。', trans: '約翰買下這家舊雜貨店後，他把它變成了一家新的便利商店。' } },
+    { section: 'fillin', type: 'input', q: '36. 這個嬰兒的出生為這個家庭注入了活力。<br>The birth of the baby b______ new l______ into the family.', ans: ['breathed', 'life'], 
+        exp: { clue: '「為...注入新活力/生命」，固定片語使用 breathe new life into...。', words: 'birth (n.) 出生; breathe (v.) 呼吸/注入', grammar: '描述過去發生的事實，使用過去式 breathed。', trans: '這個嬰兒的出生為這個家庭注入了新活力。' } },
+    { section: 'fillin', type: 'input', q: '37. 句子重組：said / Taiwan this weekend / The news / a typhoon will hit / that', ans: ['The news said that a typhoon will hit Taiwan this weekend.'], 
+        exp: { clue: '先找出主詞與動詞 The news said (新聞說)，後面接 that 子句說明內容。', words: 'typhoon (n.) 颱風; hit (v.) 襲擊', grammar: '名詞子句 that a typhoon will hit... 作為動詞 said 的受詞。', trans: '新聞說這個週末會有颱風襲擊台灣。' } },
+    { section: 'fillin', type: 'input', q: '38. 句子重組：that / such / a touching movie / many people / It was / cried in the theater', ans: ['It was such a touching movie that many people cried in the theater.'], 
+        exp: { clue: '運用 It was such a (adj) N that... 句型。', words: 'touching (adj.) 感人的; theater (n.) 電影院', grammar: 'such + a + adj. + N + that + 結果子句 (如此...以至於...)。', trans: '這是一部如此感人的電影，以至於許多人在電影院裡哭了。' } }
+];
+
+// ================= 互動邏輯區塊 =================
+
+// 1. 頁籤切換
+function renderTabs() {
+    const tabs = document.querySelectorAll('.nav-tab');
+    const sections = document.querySelectorAll('.section-container');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.target).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+}
+
+// 2. 智慧語音：單題朗讀 (自動替換空格與段落停頓)
+function playSingleTTS(btn) {
+    if (!('speechSynthesis' in window)) {
+        alert("您的瀏覽器不支援語音朗讀功能。");
+        return;
+    }
+    window.speechSynthesis.cancel(); 
+
+    let q = decodeURIComponent(btn.dataset.q);
+    let ans = decodeURIComponent(btn.dataset.ans);
+
+    // 把 HTML <br> 換成句號，讓對話朗讀時會自然停頓
+    let text = q.replace(/<br\s*\/?>/gi, '. ');
+
+    // 替換底線或單字挖空 (例如: ____ 或 a______t)
+    text = text.replace(/_{3,}/g, ans);
+    text = text.replace(/[a-z]______[a-z]/i, ans);
+    
+    // 移除 HTML 標籤與題號 (如 24. )
+    text = text.replace(/<[^>]*>?/gm, '');
+    text = text.replace(/^\d+\.\s*/, '');
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+}
+
+// 3. 智慧語音：文章朗讀 (自動填補克漏字)
+function playContextTTS(btn) {
+    if (!('speechSynthesis' in window)) {
+        alert("您的瀏覽器不支援語音朗讀功能。");
+        return;
+    }
+    window.speechSynthesis.cancel();
+
+    let en = decodeURIComponent(btn.dataset.en);
+    let fillWords = JSON.parse(decodeURIComponent(btn.dataset.fill));
+
+    // 先清除 HTML 標籤與換行
+    let text = en.replace(/<br\s*\/?>/gi, '. ').replace(/<[^>]*>?/gm, '');
+
+    // 依序將克漏字標記替換為正確單字
+    for (const [key, value] of Object.entries(fillWords)) {
+        text = text.split(key).join(value);
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+}
+
+// 4. 選擇題批改 (修正了DOM階層抓取，確保解析 100% 展開)
+function checkMC(questionIndex, optionIndex, correctIndex, btnElement) {
+    // 使用 closest 安全地向上抓取整個題目卡片
+    const card = btnElement.closest('.question-card');
+    const options = card.querySelectorAll('.option-label');
+    const feedback = card.querySelector('.feedback');
+    const expBox = card.querySelector('.exp-box');
+
+    // 鎖定所有選項避免重複作答
+    options.forEach((opt, idx) => {
+        opt.style.pointerEvents = 'none';
+        const input = opt.querySelector('input');
+        if (input) input.disabled = true;
+
+        if (idx === correctIndex) {
+            opt.classList.add('correct');
+        } else if (idx === optionIndex) {
+            opt.classList.add('wrong');
+        }
+    });
+
+    // 展開解析與回饋
+    feedback.style.display = 'block';
+    if (optionIndex === correctIndex) {
+        feedback.innerHTML = '✅ 答對了！非常棒！';
+        feedback.className = 'feedback success';
+    } else {
+        feedback.innerHTML = '❌ 答錯了，請查看下方解析：';
+        feedback.className = 'feedback error';
+    }
+    expBox.style.display = 'block';
+}
+
+// 5. 填充題批改
+function checkInput(btnElement) {
+    const card = btnElement.closest('.question-card');
+    const inputs = card.querySelectorAll('input[type="text"]');
+    const feedback = card.querySelector('.feedback');
+    const expBox = card.querySelector('.exp-box');
+    const correctAnswers = JSON.parse(decodeURIComponent(btnElement.dataset.ans));
+    let allCorrect = true;
+
+    inputs.forEach((input, idx) => {
+        const val = input.value.trim().toLowerCase();
+        const cleanVal = val.replace(/[^\w\s]/g, '');
+        const cleanAns = correctAnswers[idx].toLowerCase().replace(/[^\w\s]/g, '');
+        
+        if (cleanVal === cleanAns) {
+            input.style.borderColor = 'var(--success)';
+            input.style.backgroundColor = '#D1FAE5';
+            input.style.color = '#064E3B';
+        } else {
+            input.style.borderColor = 'var(--error)';
+            input.style.backgroundColor = '#FEE2E2';
+            input.style.color = '#7F1D1D';
+            allCorrect = false;
+        }
+        input.disabled = true;
+    });
+
+    btnElement.style.display = 'none'; 
+    feedback.style.display = 'block';
+    if (allCorrect) {
+        feedback.innerHTML = '✅ 完全正確！';
+        feedback.className = 'feedback success';
+    } else {
+        feedback.innerHTML = '❌ 有部分錯誤，正確答案為：' + correctAnswers.join(' / ');
+        feedback.className = 'feedback error';
+    }
+    expBox.style.display = 'block';
+}
+
+// 6. 翻譯切換
+function toggleTranslation(contextId) {
+    const transDiv = document.getElementById(`trans-${contextId}`);
+    if (transDiv.style.display === 'none' || transDiv.style.display === '') {
+        transDiv.style.display = 'block';
+    } else {
+        transDiv.style.display = 'none';
+    }
+}
+
+// 畫面初始化
+function initApp() {
+    const app = document.getElementById('app');
+    const sections = { vocab: '', grammar: '', cloze: '', dialogue: '', reading: '', fillin: '' };
+    let renderedContexts = {};
+
+    quizData.forEach((item, index) => {
+        let html = '';
+        
+        // 渲染 Context
+        if (item.context && !renderedContexts[item.context]) {
+            const ctx = contexts[item.context];
+            const safeEnForTTS = encodeURIComponent(ctx.en);
+            const fillWordsStr = encodeURIComponent(JSON.stringify(ctx.fillWords));
+
+            html += `
+            <div class="context-block">
+                <div class="context-header">
+                    <div class="context-title">📝 ${ctx.title}</div>
+                    <div class="controls-group">
+                        <button class="tts-btn" data-en="${safeEnForTTS}" data-fill="${fillWordsStr}" onclick="playContextTTS(this)">🔊 朗讀文章 (自動填空)</button>
+                        <button class="action-btn" onclick="toggleTranslation('${item.context}')">顯示/隱藏中文翻譯</button>
+                    </div>
+                </div>
+                <div class="context-text">${ctx.en}</div>
+                <div class="context-trans" id="trans-${item.context}">${ctx.zh}</div>
+            </div>`;
+            renderedContexts[item.context] = true;
+        }
+
+        // 決定要丟給 TTS 的正確答案
+        let ttsAns = item.type === 'mc' ? item.options[item.ans].replace(/\([A-D]\)\s*/, '') : item.ans.join(' ');
+        const safeQ = encodeURIComponent(item.q);
+        const safeAns = encodeURIComponent(ttsAns);
+
+        html += `<div class="question-card">
+            <div class="question-header">
+                <div class="question-text">${item.q}</div>
+                <button class="tts-btn" data-q="${safeQ}" data-ans="${safeAns}" onclick="playSingleTTS(this)" title="朗讀題目（自動套入答案）">🔊</button>
+            </div>
+            <div class="interactive-area">`;
+
+        // 渲染選項
+        if (item.type === 'mc') {
+            html += `<div class="options-grid">`;
+            item.options.forEach((opt, optIdx) => {
+                html += `<label class="option-label" onclick="checkMC(${index}, ${optIdx}, ${item.ans}, this)">
+                            <input type="radio" name="q${index}"> ${opt}
+                         </label>`;
+            });
+            html += `</div>`;
+        } else if (item.type === 'input') {
+            item.ans.forEach((ans, ansIdx) => {
+                html += `<input type="text" class="input-field" placeholder="請輸入作答 (Blank ${ansIdx+1})" onkeypress="if(event.key === 'Enter') checkInput(this.parentElement.querySelector('.check-btn'))">`;
+            });
+            const safeAnsArray = encodeURIComponent(JSON.stringify(item.ans));
+            html += `<button class="check-btn" data-ans="${safeAnsArray}" onclick="checkInput(this)">送出檢查 / 顯示答案與詳解</button>`;
+        }
+
+        // 解析區塊 (預設隱藏)
+        html += `</div>
+            <div class="feedback"></div>
+            <div class="exp-box">
+                <h4>💡 詳解分析</h4>
+                <div class="exp-item"><strong>解題線索：</strong>${item.exp.clue}</div>
+                <div class="exp-item"><strong>重要字詞：</strong>${item.exp.words}</div>
+                <div class="exp-item"><strong>文法句型：</strong>${item.exp.grammar}</div>
+                <div class="exp-item"><strong>中文翻譯：</strong>${item.exp.trans}</div>
+            </div>
+        </div>`;
+
+        sections[item.section] += html;
+    });
+
+    app.innerHTML = Object.keys(sections).map((key, i) => `
+        <div class="section-container ${i === 0 ? 'active' : ''}" id="${key}">
+            ${sections[key]}
+        </div>
+    `).join('');
+
+    renderTabs();
+}
+
+window.onload = initApp;
+</script>
+</body>
+</html>
